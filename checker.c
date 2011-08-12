@@ -6,15 +6,17 @@
 
 typedef struct s_wlist{
   char word[MAX_WORD];
+  int count;
   struct s_wlist *next;
 } wlist;
 
-int push(char *w, wlist **l){
+int push(char *w, int count, wlist **l){
   wlist *elem = malloc(sizeof(wlist));   
   if (!elem) return 0; 
 
   strncpy(elem->word, w, MAX_WORD - 1); 
   elem->word[MAX_WORD-1] = '\0';
+  elem->count = count; 
   elem->next = *l;
   *l = elem;
 
@@ -35,6 +37,48 @@ void empty(wlist **l){
     free(t);
   }
   *l = NULL;
+}
+
+#define WTAB 20000 
+
+wlist *wtab[WTAB];
+
+int hash(char *s){
+  unsigned int h = 0;
+  unsigned char *p = (unsigned char *) s;
+
+  while(*p){
+    h = h * 37 + *p;
+    p++;
+  }
+  return h % WTAB;
+}
+
+int put(char *s, int count){
+  return push(s, count, &wtab[hash(s)]);
+}
+
+int get(char *s){
+  wlist *cur;
+
+  for (cur = wtab[hash(s)] ; cur ; cur = cur->next)
+    if (strcmp(cur->word, s) == 0)
+      return cur->count;
+
+  return -1;
+}
+
+void load_lang_model(char *f){
+  FILE *file;
+  char word[MAX_WORD], fmt[MAX_WORD];
+  int count;
+
+  file = fopen(f, "r");
+  if (!file) return;
+
+  while (fscanf(file, "%63s %d", word, &count) != EOF){
+    put(word, count); 
+  }
 }
 
 void delchar(char *w, int i){
@@ -64,7 +108,7 @@ void rcorrections(char *s, int start, wlist **list){
 
   while (w[i] == w[i+1]){
     delchar(w, i);
-    push(w, list); 
+    push(w, 0, list); 
 
     for (j = i; w[j] == w[i] ; j++)
       ; /* Skip to the non-repeating chars */
@@ -105,24 +149,19 @@ void get_v_corrections(char *s, int start, wlist **list){
 
   for (j = 0 ; vowels[j] ; j++){
     w[i] = vowels[j];
-    push(w, list);
+    push(w, 0, list);
     get_v_corrections(w, i+1, list);
   }
 }
 
 int main(){
-  wlist *cur, *words = NULL;
+  wlist *cur;
+  int i;
 
-  get_r_corrections("adddresssesss", &words);
-
-  for (cur = words ; cur ; cur = cur->next)
-    printf("%s\n", cur->word);
-  empty(&words);
-
-  get_v_corrections("peeple", 0, &words);
-  for (cur = words ; cur ; cur = cur->next)
-    printf("%s\n", cur->word);
-  empty(&words);
+  load_lang_model("freqs.txt"); 
+  for (i = 0 ; i < WTAB ; i++)
+    for (cur = wtab[i] ; cur ; cur = cur->next) 
+      printf("%s %d\n", cur->word, cur->count);
   
   return 0;
 }
