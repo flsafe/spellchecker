@@ -4,6 +4,8 @@
 #include <ctype.h>
 
 #define MAX_WORD 64
+#define MAX_VOWELS 7
+#define MAX_CONSEC 2
 #define WTAB 20000 
 
 typedef struct s_wlist{
@@ -13,7 +15,6 @@ typedef struct s_wlist{
 } wlist;
 
 wlist *wtab[WTAB];
-
 
 int push(char *w, int count, wlist **l){
   wlist *elem = malloc(sizeof(wlist));   
@@ -130,17 +131,45 @@ void rcorrections(char *s, int start, wlist **list){
     ; /* Skip to first repeating char */
 
   while (w[i] == w[i+1]){
+    for (j = i; w[j] == w[i] ; j++)
+      ; /* Skip to the non-repeating chars */
+    rcorrections(w, j, list);
+
     delchar(w, i);
     push(w, 0, list); 
 
     for (j = i; w[j] == w[i] ; j++)
       ; /* Skip to the non-repeating chars */
-
     rcorrections(w, j, list);
   }
 }
 
-void get_r_corrections(char *s, wlist **list){rcorrections(s,0,list);}
+void trim_consec(char *s, int p){
+  int read, write, count;
+  char c, prev;
+
+  prev = '\0';
+  read = write = count = 0;
+  do {
+    c = s[read]; 
+
+    if (prev == c)
+      count++;
+    else 
+      count = 0;
+
+    if (count < p)
+      s[write++] = c;
+
+    prev = c;
+    read++;
+  } while(c);
+}
+
+void get_r_corrections(char *s, wlist **list){
+  trim_consec(s, MAX_CONSEC);
+  rcorrections(s, 0, list);
+}
 
 char *vowels = "aeiou";
 
@@ -154,6 +183,17 @@ int vowel(char c){
       return 0;
       break;
   }
+}
+
+int nvowels(char *s){
+  int count;
+
+  count = 0;
+  while(*s++)
+    if (vowel(*s))
+      count++;
+
+  return count;
 }
 
 void vcorrections(char *s, int start, wlist **list){
@@ -218,15 +258,13 @@ char *get_most_freq(wlist *l){
 void get_all_corrections(char *s, wlist **l){
   wlist *cur;
 
+  push(s, 0, l);
   get_cap_corrections(s, l);
-  if (*l == NULL)
-    push(s, 0, l);
-
   for (cur = *l ; cur ; cur = cur->next)
     get_r_corrections(cur->word, l);
-
   for (cur = *l ; cur ; cur = cur->next)
-    get_v_corrections(cur->word, l);
+    if (nvowels(cur->word) <= MAX_VOWELS)
+      get_v_corrections(cur->word, l);
 }
 
 int main(){
@@ -244,6 +282,7 @@ int main(){
       printf("%s\n", word);
     else{
       get_all_corrections(word, &words);
+
       filter_known(&words);
       correction = get_most_freq(words);
 
