@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 #define MAX_WORD 64
 #define WTAB 20000 
@@ -178,16 +179,81 @@ void vcorrections(char *s, int start, wlist **list){
 
 void get_v_corrections(char *s, wlist **list){vcorrections(s, 0, list);}
 
-int main(){
-  wlist *words, *cur;
+void get_cap_corrections(char *s, wlist **list){
+  int correction;
+  char *c; 
+  char word[MAX_WORD];
 
-  load_lang_model("freqs.txt"); 
-  words = NULL; 
-  get_r_corrections("adddressss", &words);
-  filter_known(&words);
+  strncpy(word, s, MAX_WORD-1);
+  word[MAX_WORD-1] = '\0';
 
-  for (cur = words ; cur ; cur = cur->next)
-    printf("%s\n", cur->word);
+  correction = 0;
+  for (c = word ; *c ; c++)
+    if (isupper(*c)){
+      *c = tolower(*c);
+      correction = 1;
+    }
+
+  if (correction)
+    push(word, 0, list);
+}
+
+char *get_most_freq(wlist *l){
+  wlist *cur;
+  char *mostfreq;
+  int maxcount;
+
+  if (l == NULL) return NULL; 
   
+  mostfreq = l->word;
+  maxcount = l->count;
+  for (cur = l ; cur ; cur = cur->next){
+    if (get(cur->word) > maxcount)
+      mostfreq = cur->word; 
+  }
+
+  return mostfreq;
+}
+
+void get_all_corrections(char *s, wlist **l){
+  wlist *cur;
+
+  get_cap_corrections(s, l);
+  if (*l == NULL)
+    push(s, 0, l);
+
+  for (cur = *l ; cur ; cur = cur->next)
+    get_r_corrections(cur->word, l);
+
+  for (cur = *l ; cur ; cur = cur->next)
+    get_v_corrections(cur->word, l);
+}
+
+int main(){
+  char *correction;
+  char word[MAX_WORD];
+  wlist *words;
+
+  load_lang_model("freqs.txt");
+
+  words = NULL; 
+  while (scanf("%63s", word) != EOF){
+    printf(">%s\n", word);
+
+    if (get(word))
+      printf("%s\n", word);
+    else{
+      get_all_corrections(word, &words);
+      filter_known(&words);
+      correction = get_most_freq(words);
+
+      if (NULL == correction)
+        printf("%s\n", "NO SUGGESTION"); 
+      else
+        printf("%s\n", correction);
+    }
+    empty(&words); 
+  }
+
   return 0;
 }
