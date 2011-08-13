@@ -282,7 +282,6 @@ int main(){
       printf("%s\n", word);
     else{
       get_all_corrections(word, &words);
-
       filter_known(&words);
       correction = get_most_freq(words);
 
