@@ -1,12 +1,13 @@
-## Spell Checker
+## Justin.tv Spell Checker
 
-  Implemented in C and Ruby on Ubuntu Linux, GCC 4.4.5 and
+  Implemented using C and Ruby on Ubuntu Linux, GCC 4.4.5 and
   Ruby 1.8.7
   
   + checker.c Implements a simple spell checker
-  + test.rb   A script that generates mispelled words
+  + test.rb   A script that generates misspelled words
+  + freqs.txt A list of words
 
-## To compilter the spell checker
+## To compile the spell checker
 
     make
 
@@ -14,10 +15,10 @@
 
     ./check
 
-## To produce test spelling errors
+## To produce spelling errors
 
     ruby test.rb
 
-## To run test spelling errors on spell checker
+## To feed spelling errors to the spell checker
 
     ruby test.rb | ./check
