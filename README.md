@@ -1,4 +1,4 @@
-## Toy checker 
+## Toy spell checker 
 
   Implemented using C and Ruby on Ubuntu Linux, GCC 4.4.5 and
   Ruby 1.8.7
