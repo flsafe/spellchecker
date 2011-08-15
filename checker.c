@@ -4,7 +4,7 @@
 #include <ctype.h>
 
 #define MAX_WORD 64
-#define MAX_VOWELS 7
+#define MAX_VOWELS 8
 #define MAX_CONSEC 2
 #define WTAB 20000 
 
@@ -29,7 +29,7 @@ int push(char *w, int count, wlist **l){
   return 1;
 }
 
-int hash(char *s){
+unsigned int hash(char *s){
   unsigned int h = 0;
   unsigned char *p = (unsigned char *) s;
 
@@ -66,7 +66,7 @@ void empty(wlist **l){
   *l = NULL;
 }
 
-void filter_known(wlist **l){
+void collect_known(wlist **l){
   wlist *cur, *prev, *t;
   
   prev = NULL;
@@ -282,7 +282,7 @@ int main(){
       printf("%s\n", word);
     else{
       get_all_corrections(word, &words);
-      filter_known(&words);
+      collect_known(&words);
       correction = get_most_freq(words);
 
       if (NULL == correction)
